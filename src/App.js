@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from "react";
 import firebase, { firestore } from "firebase";
+
 import "./App.css";
+import RenderPicture from "./components/renderPicture";
+import {
+  handleAuth,
+  handleLogout,
+  uploadPicture,
+  createPicture,
+} from "./components/firebaseUtils";
+import UploadFile from "./components/uploadFile";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -11,8 +20,7 @@ function App() {
       setUser(user);
     });
 
-    firebase
-      .firestore()
+    firestore()
       .collection("pictures")
       .get()
       .then((snapshot) => {
@@ -22,88 +30,23 @@ function App() {
         });
         setPictures(picturesTemp);
       });
-
-    // const unsubscribe = firebase
-    //   .firestore()
-    //   .collection("pictures")
-    //   .onSnapshot((snapshot) => {
-    //     let changes = snapshot.docChanges();
-    //     const picturesTemp = [];
-    //     changes.forEach((change) => {
-    //       console.log(change);
-    //       if (change.type == "added") {
-    //         picturesTemp.push(change.doc.data());
-    //       }
-    //     });
-    //     if (picturesTemp.length > 0) {
-    //       setPictures(pictures.concat(picturesTemp));
-    //     }
-    //   });
-    // return () => unsubscribe();
-    //callback();
   }, []);
-
-  const handleAuth = () => {
-    const provider = new firebase.auth.GoogleAuthProvider();
-
-    firebase
-      .auth()
-      .signInWithPopup(provider)
-      .then((result) => console.log(`${result.user.email} has logged In`))
-      .catch((error) => console.log(`Error: ${error.code}: ${error.message}`));
-  };
-
-  const RenderPicture = ({ picture }) => {
-    return (
-      <>
-        <img
-          className="profileImage"
-          src={picture.photoURL}
-          alt={picture.displayName}
-        />
-        <span>{picture.displayName}</span>
-        <img className="image" src={picture.image} alt={picture.displayName} />
-      </>
-    );
-  };
-
-  const UploadFile = ({ handleUpload }) => {
-    return (
-      <input type="file" className="inputFile" onChange={handleUpload}></input>
-    );
-  };
 
   const handleUploadPicture = (event) => {
     const file = event.target.files[0];
-    const storageRef = firebase.storage().ref(`/pictures/${file.name}`);
-
-    const task = storageRef.put(file);
-    task.on(
-      "state_changed",
-      (snapshot) => {},
-      (error) => console.log(`Error when uploading picture: ${error}`),
-      () => {
-        task.snapshot.ref.getDownloadURL().then((downloadURL) => {
-          let record = {
-            photoURL: user.providerData[0].photoURL,
-            displayName: user.displayName,
-            image: downloadURL,
-          };
-
-          firebase
-            .firestore()
-            .collection("pictures")
-            .add(record)
-            .then(
-              () => {
-                console.log(`Picture uploaded successfully`);
-                setPictures(pictures.concat(record));
-              },
-              (err) => console.log(`error ocurrio ${err}`)
-            );
-        });
-      }
-    );
+    uploadPicture(file).then((downloadURL) => {
+      let record = {
+        photoURL: user.providerData[0].photoURL,
+        displayName: user.displayName,
+        image: downloadURL,
+      };
+      createPicture(record)
+        .then(() => {
+          console.log(`Picture created successfully`);
+          setPictures(pictures.concat(record));
+        })
+        .catch((error) => console.log(`Error creating the pictrue. ${error}`));
+    });
   };
 
   const renderLoginButton = () => {
