@@ -53,6 +53,9 @@ function App() {
     if (user) {
       return (
         <>
+          <button className="logOut" onClick={handleLogout}>
+            Log out
+          </button>
           <UploadFile handleUpload={handleUploadPicture} />
           {pictures
             .map((pic, index) => <RenderPicture key={index} picture={pic} />)
@@ -60,7 +63,11 @@ function App() {
         </>
       );
     } else {
-      return <button onClick={handleAuth}>Sign in with Google</button>;
+      return (
+        <button className="logIn" onClick={handleAuth}>
+          Sign in with Google
+        </button>
+      );
     }
   };
 

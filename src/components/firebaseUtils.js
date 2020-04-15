@@ -11,7 +11,11 @@ const handleAuth = () => {
 };
 
 const handleLogout = () => {
-  console.log(`hola mundo`);
+  firebase
+    .auth()
+    .signOut()
+    .then((result) => console.log(`${result.user.email} has logged out`))
+    .catch((error) => console.log(`Error: ${error.code}: ${error.message}`));
 };
 
 const uploadPicture = (file) => {
